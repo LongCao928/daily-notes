@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片文件</title>
+  <style>
+    .hide {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <label for="avatar">选择图片</label>
+    <input
+      id="avatar"
+      name="avatar"
+      type="file"
+      multiple
+      onchange="handleInputChange(event)"
+      oninput="handleInput()"
+      accept="image/png,image/jpeg,image/gif,image/jpg" />
+  </div>
+  <button id="btn-empty" style="display: none; cursor: pointer;" onclick="handleDel()">清空文件</button>
+
+  <canvas id="canvas" class="hide"></canvas>
+  <script>
+
+    /* const inputEl = document.getElementById('avatar')
+    inputEl.addEventListener('change', function() {
+      console.log('change')
+    }) */
+
+    const SIZE_KB = 1024
+    const SIZE_MB = SIZE_KB * 1024
+    const SIZE_GB = SIZE_MB * 1024
+    const onlineUrl = `https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/leancloud-assets/0d614af263aa63aa6a77.png~tplv-t2oaga2asx-image.image`
+    const onlineUrl2 = `https://p1-jj.byteimg.com/tos-cn-i-t2oaga2asx/leancloud-assets/5d70fd6af940df373834.png~tplv-t2oaga2asx-image.image`
+
+    async function handleInputChange(event) {
+      console.log('文件改变了')
+      const files = event.target.files
+      console.log(files)
+      if (!files.length) {
+        document.getElementById('btn-empty').style.display = 'none'
+        return
+      }
+      document.getElementById('btn-empty').style.display = 'block'
+      console.log(files[0].size) // 文件大小
+      for (const file of files) {
+        if (file.size <= 10 * SIZE_MB) {
+          //
+          const { base64 } = await getImageToBase64(file)
+          console.log(base64)
+        } else {
+          handleDel()
+          alert('图片大小不能超过10M')
+        }
+      }
+    }
+
+    function handleInput() {
+      // console.log('oninput事件')
+    }
+
+    function handleDel() {
+      document.getElementById('avatar').value = ''
+      document.getElementById('btn-empty').style.display = 'none'
+    }
+
+
+    function getImageToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const fd = new FileReader()
+        fd.readAsDataURL(file)
+        fd.onload = (e) => {
+          const target = e.target || null
+          if (target && target.result) {
+            const base64 = target.result
+            resolve({ base64 })
+          }
+        }
+        fd.onerror = reject
+      })
+    }
+
+    
+    function getUrlToBase64(url) {
+      const qrImg = document.createElement('img')
+      const canvas = document.getElementById('canvas')
+      qrImg.crossOrigin = 'Anonymous'
+      qrImg.onload = function() {
+        canvas.width = qrImg.width
+        canvas.height = qrImg.height
+        console.log(`width: ${qrImg.width}`)
+        console.log(`height: ${qrImg.height}`)
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(qrImg, 0, 0, canvas.width, canvas.width)
+        const dataURL = canvas.toDataURL('image/png', 1)
+        console.log(dataURL)
+      }
+      qrImg.onerror = function(err) {
+        console.log(err)
+      }
+      qrImg.src = url
+    }
+
+    getUrlToBase64(onlineUrl2)
+    
+    function getImageUrlDownloadToBase64(url) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('get', url, true)
+        xhr.responseType = 'blob'
+        xhr.onload = function () {
+          if (this.status === 200) {
+            const blob = this.response
+            const oFileReader = new FileReader()
+            oFileReader.onloadend = function (e) {
+              if (e.target && e.target.result) {
+                const base64 = e.target.result
+                resolve(base64)
+              } else {
+                reject()
+              }
+            }
+            oFileReader.onerror = reject
+            oFileReader.readAsDataURL(blob)
+          } else {
+            reject()
+          }
+        }
+        xhr.send()
+      })
+    }
+
+    getImageUrlDownloadToBase64(onlineUrl).then((res) => {
+      console.log(res)
+    }).catch((err) => {
+      console.log(err)
+    })
+
+  </script>
+</body>
+</html>
